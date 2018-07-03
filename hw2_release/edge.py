@@ -161,10 +161,13 @@ def non_maximum_suppression(G, theta):
             elif theta[row, col] % 90 == 0 and row > 0 and row < H-1:
                 largest = np.max(G[row-1:row+2, col])
             elif row > 0 and row < H-1 and col > 0 and col < W-1:
-                largest = max([G[row, col], G[row-1, col-1], G[row+1, col+1]])
+                if theta[row, col] % 135 == 0:
+                    largest = max([G[row, col], G[row - 1, col + 1], G[row + 1, col - 1]])
+                elif theta[row, col] % 45 == 0:
+                    largest = max([G[row, col], G[row - 1, col - 1], G[row + 1, col + 1]])
 
-            if largest != G[row, col]:
-                out[row,col] = 0
+            if abs(largest - G[row, col]) > 1e-3:
+                out[row,col] = 0.0
     ### END YOUR CODE
 
     return out
@@ -190,7 +193,7 @@ def double_thresholding(img, high, low):
 
     ### YOUR CODE HERE
     strong_edges = np.array(img > high)
-    weak_edges = np.array(img > low) & np.array(img < high)
+    weak_edges = np.array(img > low) & np.array(img <= high)
     ### END YOUR CODE
 
     return strong_edges, weak_edges
@@ -254,8 +257,9 @@ def link_edges(strong_edges, weak_edges):
         visited[node[0], node[1]] = 1
 
         while len(nodes) > 0:
-            node = nodes[0]
-            nodes = nodes[1:]
+            # node = nodes[0]
+            # nodes = nodes[1:]
+            node = nodes.pop(0)
             if visited[node[0], node[1]]:
                 continue
             if weak_edges[node[0], node[1]]:
@@ -325,7 +329,15 @@ def hough_transform(img):
     # Find rho corresponding to values in thetas
     # and increment the accumulator in the corresponding coordiate.
     ### YOUR CODE HERE
-    pass
+    for x in range(W):
+        for y in range(H):
+            if img[x, y] == 0:
+                continue
+
+            for i, (c, s) in enumerate(zip(cos_t, sin_t)):
+                rho = y * c + x * s
+                rho_idx = np.where(rhos == int(rho))
+                accumulator[rho_idx, i] += 1
     ### END YOUR CODE
 
     return accumulator, rhos, thetas
